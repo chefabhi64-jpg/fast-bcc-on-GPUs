@@ -9,8 +9,8 @@ GPU-accelerated implementation of Biconnected Components (BCC) algorithms for gr
 ├── baselines/          # Baseline implementations for comparison
 │   ├── cpu/           # CPU-based implementation using ParlayLib
 │   ├── uvm/           # Unified Virtual Memory (UVM) GPU implementation
-│   ├── wk-bcc-2017/   # Wang-Koorapaty BCC 2017 baseline
-│   └── wk-bcc-2018/   # Wang-Koorapaty BCC 2018 baseline
+│   ├── wk-bcc-2017/   # Wadekar-Kothapalli BCC 2017 baseline
+│   └── wk-bcc-2018/   # Wadekar-Kothapalli BCC 2018 baseline
 ├── depth/             # Depth-based approach implementation
 ├── external/          # External memory implementations
 │   ├── streams/       # Version with CUDA streams
@@ -94,7 +94,7 @@ Example:
 ./main g1.txt
 ```
 
-#### 3. Wang-Koorapaty BCC 2017
+#### 3. Wadekar-Kothapalli BCC 2017
 ```bash
 cd baselines/wk-bcc-2017
 ./bin/cuda_bcc -i <graph_file> -a ebcc [-o output_dir] [-d device]
@@ -108,7 +108,7 @@ Options:
 - `-o`: Output directory (optional)
 - `-d`: CUDA device number (default: 0)
 
-#### 4. Wang-Koorapaty BCC 2018
+#### 4. Wadekar-Kothapalli BCC 2018
 ```bash
 cd baselines/wk-bcc-2018
 ./bin/main <graph_file> [k] [verbose]
