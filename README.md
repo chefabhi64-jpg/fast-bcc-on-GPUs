@@ -1,6 +1,6 @@
 # Fast BCC on GPUs
 
-GPU-accelerated implementation of Biconnected Components (BCC) algorithms for graph processing.
+GPU-based implementation of Biconnected Components (BCC) algorithms for graph processing.
 
 ## Project Structure
 
@@ -8,10 +8,10 @@ GPU-accelerated implementation of Biconnected Components (BCC) algorithms for gr
 .
 ├── baselines/          # Baseline implementations for comparison
 │   ├── cpu/           # CPU-based implementation using ParlayLib
-│   ├── uvm/           # Unified Virtual Memory (UVM) GPU implementation
 │   ├── wk-bcc-2017/   # Wadekar-Kothapalli BCC 2017 baseline
 │   └── wk-bcc-2018/   # Wadekar-Kothapalli BCC 2018 baseline
-├── depth/             # Depth-based approach implementation
+|
+├── depth/             # Calculate approximate diameter of input graph using serial BFS
 ├── external/          # External memory implementations
 │   ├── streams/       # Version with CUDA streams
 │   └── without_streams/ # Version without CUDA streams
@@ -24,9 +24,9 @@ GPU-accelerated implementation of Biconnected Components (BCC) algorithms for gr
 
 ### GPU Implementations
 The project includes multiple GPU implementations with different optimization strategies:
-- Filtering optimizations
-- CUDA streams for concurrent execution
-- Unified Virtual Memory (UVM) for simplified memory management
+- **In-memory**: Direct GPU memory implementations with/without filtering optimizations
+- **External**: Out-of-core implementations for large graphs using CUDA streams
+- **Filtering**: Edge filtering to reduce computation overhead
 
 ## Building
 
@@ -55,6 +55,14 @@ cd gpu/with_filter
 make
 ```
 
+### Clean Build Artifacts
+
+To clean all build artifacts:
+
+```bash
+make clean
+```
+
 ## Running
 
 ### Quick Start - Run All Implementations
@@ -81,20 +89,12 @@ cd baselines/cpu/src
 ```
 Example:
 ```bash
-./FAST_BCC ../../datasets/input.txt 3
+./FAST_BCC ../../../datasets/input.txt 3
 ```
+Parameters:
+- `num_rounds`: Number of benchmark rounds (default: 3)
 
-#### 2. UVM GPU Implementation
-```bash
-cd baselines/uvm
-./main <graph_file>
-```
-Example:
-```bash
-./main g1.txt
-```
-
-#### 3. Wadekar-Kothapalli BCC 2017
+#### 2. Wadekar-Kothapalli BCC 2017
 ```bash
 cd baselines/wk-bcc-2017
 ./bin/cuda_bcc -i <graph_file> -a ebcc [-o output_dir] [-d device]
@@ -108,7 +108,7 @@ Options:
 - `-o`: Output directory (optional)
 - `-d`: CUDA device number (default: 0)
 
-#### 4. Wadekar-Kothapalli BCC 2018
+#### 3. Wadekar-Kothapalli BCC 2018
 ```bash
 cd baselines/wk-bcc-2018
 ./bin/main <graph_file> [k] [verbose]
@@ -121,7 +121,7 @@ Parameters:
 - `k`: Max edges per vertex to sample (default: 2)
 - `verbose`: Enable verbose output, 0 or 1 (default: 0)
 
-#### 5. GPU with Filter
+#### 4. GPU with Filter (In-Memory)
 ```bash
 cd gpu/with_filter
 ./main <graph_file>
@@ -131,7 +131,7 @@ Example:
 ./main ../../depth/datasets/input_100.txt
 ```
 
-#### 6. GPU without Filter
+#### 5. GPU without Filter (In-Memory)
 ```bash
 cd gpu/without_filter
 ./main <graph_file>
@@ -141,7 +141,7 @@ Example:
 ./main ../../depth/datasets/input_100.txt
 ```
 
-#### 7. External with Streams
+#### 6. External with Streams
 ```bash
 cd external/streams
 ./ext-bcc <graph_file> <gpu_share> <batch_size>
@@ -154,7 +154,7 @@ Parameters:
 - `gpu_share`: GPU workload share (0.0 to 1.0)
 - `batch_size`: Batch size for processing
 
-#### 8. External without Streams
+#### 7. External without Streams
 ```bash
 cd external/without_streams
 ./ext-bcc <graph_file> <gpu_share> <batch_size>
@@ -164,7 +164,7 @@ Example:
 ./ext-bcc input.txt 1.0 1048576
 ```
 
-#### 9. Depth BFS
+#### 8. Depth BFS (Graph Diameter)
 ```bash
 cd depth
 ./bfs <graph_file> [source_vertex]
@@ -176,16 +176,61 @@ Example:
 
 ## Requirements
 
-- NVIDIA CUDA Toolkit
-- C++ compiler with C++11 support or later
-- CUDA-capable GPU
+- **NVIDIA CUDA Toolkit** (version 11.0 or later recommended)
+- **C++ compiler** with C++17 support (g++ or clang++)
+- **CUDA-capable GPU** with compute capability 7.0 or higher
+- **ParlayLib** (included as submodule for CPU baseline)
+
+## Input Graph Format
+
+All implementations expect graphs in edge list format:
+```
+num_vertices num_edges
+u1 v1
+u2 v2
+...
+```
+
+- Vertices are 0-indexed
+- Each line after the header represents an undirected edge
+- For undirected graphs, include both (u,v) and (v,u) or just one (implementation handles both)
 
 ## Datasets
 
 Test datasets are located in:
-- `depth/datasets/`
-- `baselines/wk-bcc-2017/datasets/`
+- `datasets/` - Main dataset directory
+- `depth/datasets/` - Additional test graphs
+- `baselines/wk-bcc-2017/datasets/` - Baseline datasets
+- `baselines/wk-bcc-2018/datasets/` - Baseline datasets
 
-## References
+## Troubleshooting
 
-This implementation builds upon research in parallel BCC algorithms and GPU computing.
+### CUDA Architecture Mismatch
+If you get architecture errors, update the `-arch` flag in Makefiles to match your GPU:
+```makefile
+CXXFLAGS = -arch=sm_XX  # Replace XX with your GPU's compute capability
+```
+
+### Out of Memory
+For large graphs:
+- Use the external memory implementations (`external/streams` or `external/without_streams`)
+- Adjust `GPU_SHARE` and `BATCH_SIZE` parameters
+
+### Build Errors
+Ensure CUDA toolkit is in your PATH:
+```bash
+export PATH=/usr/local/cuda/bin:$PATH
+export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+```
+
+## Contact & Support
+
+For questions, issues, or contributions, please contact:
+- **Maintainer**: -
+- **GitHub Issues**: Report bugs via GitHub issues
+
+When reporting issues, please include:
+- GPU model and compute capability
+- CUDA version (`nvcc --version`)
+- Error messages or unexpected behavior
+- Graph size (vertices/edges) if relevant
